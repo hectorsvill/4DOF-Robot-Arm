@@ -1,6 +1,6 @@
 /* Mini_Servo_robot_arm
  * by: @hectorsvill
- * 
+ *
  * Components:
  *  - 4 x SG90 Servo
  *  - 5v-9v power suply module
@@ -18,7 +18,7 @@
 #define servo2Pin 9
 #define servo3Pin 10
 
-// servo min max anggles 
+// servo min max anggles
 #define servo0Min 0
 #define servo0Max 175
 
@@ -63,37 +63,39 @@ void loop() {
 // ex: s0 120 - move servo number 0 to angle 120
 // ex: s0 +10 - move servo number 0 from current positon + 10
 // ex: s0 -10 - move servo number 0 from current positon - 10
-// ex: pa - print angle   
-// ra: reset servo angle 
+// ex: pa - print angle
+// ra: reset servo angle
 
 void commandLineState() {
       if (Serial.available()) {
-      
+
       String str = Serial.readString();
 
-      int servoNumber = String(str[1]).toInt();
-      if ((str[0] == 's') && (servoNumber < servoCount)) {
+      int servoId = String(str[1]).toInt();
+      if ((str[0] == 's') && (servoId < servoCount)) {
+        Servo servo = servoList[servoId];
         int intStart = str[3] == '+' || str[3] == '-' ? 4 : 3;
-        
+
         String valueStr = "";
         for (int i = intStart; i < str.length(); i++) {
           valueStr += str[i];
         }
-        
+
         int value = valueStr.toInt();
-        int angle = servoList[servoNumber].read();
-        
+        int angle = servo.read();
+
         if (str[3] == '+') {
-          value = angle + value;
-          servoList[servoNumber].write(value);
+          int newAngle = angle + value;
+          value = angleIsInRange(servoId, newAngle) == true ? newAngle : angle;
         } else if(str[3] == '-') {
-          value = angle - value;
-          servoList[servoNumber].write(value);
+          int newAngle = angle - value;
+          value = angleIsInRange(servoId, newAngle) == true ? newAngle : angle;
+          servo.write(value);
         } else {
-          servoList[servoNumber].write(value);  
+          servo.write(value);
         }
-        
-        String message = "servo " + String(servoNumber) + " to angle " + String(value);
+
+        String message = "servo " + String(servoId) + " to angle " + String(value);
         Serial.println(message);
       }else if (str[0] == 'p' && str[1] == 'a') {
         readServoAngles();
@@ -102,17 +104,23 @@ void commandLineState() {
       }
     }
 }
+
+bool angleIsInRange(int servoId, int angle) {
+  return (servoMinList[servoId] >= angle && servoMaxList[servoId] <= angle) ? true : false;
+}
+
 int resetPosition() {
   for (int i = 0; i < servoCount; i++) { servoList[i].write(RESETANGLE); }
   Serial.println("Reseting Servos to angle " + String(RESETANGLE));
 }
+
 int *readServoAngles() {
   int arr[4] = {};
-  
+
   for (int i = 0; i < servoCount; i++) {
     arr[i] = servoList[i].read();
   }
-  
+
   String str = "servo 0: " + String(arr[0]) + "\nservo 1: " + String(arr[1]) + "\nservo 2: " + String(arr[2]) + "\nservo 3: " + String(arr[3]);
   Serial.println(str);
   return arr;
@@ -129,29 +137,22 @@ void swingServo(Servo servo, int maxPosition) {
     servo.write(i);
 //    Serial.println(i);
     delay(delayTime);
-  }  
+  }
 }
 
-void randomPosition() {
-  int num = random(0, 170);
-  Serial.println(num);
-  servo1.write(num);  
-  delay(250);
-}
-
-void goToZero(Servo servo) { 
+void goToZero(Servo servo) {
   while (servo.read() > 0) {
     int pinPosition = servo.read();
     pinPosition -= 5;
     servo.write(pinPosition);
-    
+
     String str = "goToZero at position: " + String(pinPosition);
 //    Serial.println(str);
 
     if (pinPosition < 0) {
       pinPosition = 0;
     }
-    
+
     delay(delayTime);
   }
 }
