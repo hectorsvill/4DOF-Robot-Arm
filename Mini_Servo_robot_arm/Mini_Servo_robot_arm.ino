@@ -70,12 +70,12 @@ void loop() {
 
 void commandLineState() {
       if (Serial.available()) {
-
       String str = Serial.readString();
-
-      int servoId = String(str[1]).toInt();
-      if ((str[0] == 's') && (servoId < SERVOCOUNT)) {
+      
+      if ((str[0] == 's') && isDigit(str[1]) && (String(str[1]).toInt() < SERVOCOUNT)) {
+        int servoId = String(str[1]).toInt();
         Servo servo = servoList[servoId];
+        
         int intStart = str[3] == '+' || str[3] == '-' ? 4 : 3;
         String valueStr = "";
 
@@ -105,7 +105,7 @@ void commandLineState() {
 
 int move(int servoId, String op, int value) {
   Servo servo = servoList[servoId];
-  int angle = servoList[servoId].read();
+  int angle = servo.read();
 
   if (op[0] == '+') {
     int newAngle = angle + value;
@@ -149,33 +149,17 @@ int *readServoAngles() {
   return arr;
 }
 
-// void swingServo(Servo servo, int maxPosition) {
-//   for (int i = 0; i <  maxPosition; i+=5) {
-//     servo.write(i);
-// //    Serial.println(i);
-//     delay(delayTime);
-//   }
-//
-//   for (int i = maxPosition; i >= 0; i-=5) {
-//     servo.write(i);
-// //    Serial.println(i);
-//     delay(delayTime);
-//   }
-// }
+ void swingServo(int servoId) {
+  Servo servo = servoList[servoId];
+  int maxPosition = servoMaxList[servoId];
+  
+   for (int i = 0; i <  maxPosition; i+=5) {
+     servo.write(i);
+     delay(DELAYTIME);
+   }
 
-void goToZero(Servo servo) {
-  while (servo.read() > 0) {
-    int pinPosition = servo.read();
-    pinPosition -= 5;
-    servo.write(pinPosition);
-
-    String str = "goToZero at position: " + String(pinPosition);
-//    Serial.println(str);
-
-    if (pinPosition < 0) {
-      pinPosition = 0;
-    }
-
-    delay(DELAYTIME);
-  }
-}
+   for (int i = maxPosition; i >= 0; i-=5) {
+     servo.write(i);
+     delay(DELAYTIME);
+   }
+ }
