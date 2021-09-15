@@ -18,7 +18,7 @@
 #define S2PIN 9
 #define S3PIN 10
 
-// servo min max anggles
+// servo min max angles
 #define S0MIN 0
 #define S0MAX 180
 
@@ -86,6 +86,7 @@ void commandLineState() {
         int value = valueStr.toInt();
 
         if (str[3] == '+' || str[3] == '-') {
+          Serial.println(str[3]);
           value = move(servoId, String(str[3]), value);
         } else {
           value = move(servoId, value);
@@ -102,6 +103,22 @@ void commandLineState() {
     }
 }
 
+int move(int servoId, String op, int value) {
+  Servo servo = servoList[servoId];
+  int angle = servoList[servoId].read();
+
+  if (op[0] == '+') {
+    int newAngle = angle + value;
+    value = angleIsInRange(servoId, newAngle) == true ? newAngle : angle;
+  } else if(op[0] == '-') {
+    int newAngle = angle - value;
+    value = angleIsInRange(servoId, newAngle) == true ? newAngle : angle;
+  }
+
+  servo.write(value);
+  return value;
+}
+
 int move(int servoId, int value) {
   Servo servo = servoList[servoId];
   int currentAngle = servo.read();
@@ -110,21 +127,6 @@ int move(int servoId, int value) {
   return newValue;
 }
 
-int move(int servoId, String op, int value) {
-  Servo servo = servoList[servoId];
-  int angle = servoList[servoId].read();
-
-  if (op == '+') {
-    int newAngle = angle + value;
-    value = angleIsInRange(servoId, newAngle) == true ? newAngle : angle;
-  } else if(op == '-') {
-    int newAngle = angle - value;
-    value = angleIsInRange(servoId, newAngle) == true ? newAngle : angle;
-  }
-
-  servo.write(value);
-  return value;
-}
 
 bool angleIsInRange(int servoId, int angle) {
   return (angle >= servoMinList[servoId] && angle <= servoMaxList[servoId]) ? true : false;
